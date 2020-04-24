@@ -2,8 +2,6 @@
 
 #include <cstring>
 #include <functional>
-#include <memory>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -97,7 +95,7 @@ struct funcptr<std::function<ret(params...)>> {
                 "Require at least one user_pointer argument");
   using proto = details::funcproto_transform_t<ret, params...>;
   using input = std::function<ret(params...)>;
-  inline explicit funcptr(input &&src) : storage(new input(src)) {}
+  inline explicit funcptr(input &&src) : storage(src) {}
   inline operator proto() {
     return [](details::user_pointer_transform_t<params>... ps) -> ret {
       user_pointer ptr =
@@ -105,10 +103,10 @@ struct funcptr<std::function<ret(params...)>> {
       return (*ptr.cast<input>())(std::forward<decltype(ps)>(ps)...);
     };
   }
-  inline void *holder() { return storage.get(); }
+  inline void *holder() { return &storage; }
 
 private:
-  std::unique_ptr<input> storage;
+  input storage;
 };
 
 template <typename lambda>
